@@ -1,0 +1,413 @@
+---
+title: An R Markdown document converted from "hw1 (v3).ipynb"
+output: html_document
+---
+
+## **Practice**
+
+```{r}
+#Practice
+x=2+3
+y=6-3
+x+y
+```
+
+```{r}
+#New Line of Code
+library(ggplot2)
+```
+
+```{r}
+library(rio) #Creating a new term
+```
+
+```{r}
+install.packages('rio')
+#installing the packages of rio
+```
+
+```{r}
+library(rio)#testing that rio is installed
+
+# Start Fresh
+#code for starting fresh?
+
+
+```{r}
+rm(list = ls())#Restarts the code to have a new start
+```
+
+```{r}
+library(rio)
+
+# Replace 'YOUR_EXCEL_FILE_URL' with the actual URL of your Excel file
+excel_url <- 'YOUR_EXCEL_FILE_URL'
+
+# Using tryCatch for error handling when reading from URL
+fragility23 <- tryCatch({
+  import(excel_url)
+}, error = function(e) {
+  message(paste("Error loading Excel file from URL:", e$message))
+  message("Please ensure the URL is correct and the file is accessible.")
+  return(NULL) # Return NULL on error
+})
+#Sanity check to confirm that the Excel file loaded correctly and to preview the data
+if (!is.null(fragility23)) {#Checks on whether the object exists and is not empty
+  print(paste0("Successfully loaded Excel file from ", excel_url, " into data frame 'fragility23'."))
+  print("First 5 rows of 'fragility23':")#Success Message
+  print(head(fragility23))
+}
+```
+
+#get the data
+
+
+code for opening a file from a url(file in Excel), name it 'fragility23'
+
+```{r}
+# opening a file from a url (file in Excel), name it 'fragility23'
+linkGit="https://github.com/nkinsman16/week1-Notebookv2/raw/refs/heads/main/FSI-2023-DOWNLOAD.xlsx"
+fragility23=rio::import(file = linkGit) #object that will hold the result
+```
+
+```{r}
+fragility23 #Review the new item
+```
+
+#exploratory commands
+
+
+find out column names in 'fragility23'?
+
+```{r}
+#Finding out the column names
+names(fragility23)
+```
+
+Check the data types in df?
+
+```{r}
+#Check the data types
+str(fragility23)
+```
+
+```{r}
+#Check the class types
+sapply(fragility23, class)
+```
+
+```{r}
+#Check the which columns are numeric
+sapply(fragility23, is.numeric)
+```
+
+show me the first 10 rows?
+
+```{r}
+#Show the first 10 rows
+head(fragility23, 10)
+```
+
+show me the last 10 rows?  
+
+```{r}
+#Show the last 10 rows
+tail(fragility23, 10)
+```
+
+```{r}
+#Summary of the numeric columns
+summary(fragility23)
+```
+
+# Transformative commands
+
+## subsetting
+
+keep some columns: Country, Total, S1: Demographic Pressures, P1: State Legitimacy, E2: Economic Inequality into Object 'frag23_sub'
+
+```{r}
+#Test which columns will be selected. grep()searches using a regular expression. Keep any column with the pattern who's name contains any of the terms listed.
+grep(pattern = "Country|S1|P1|E2|Total",x = names(fragility23),fixed = F,value = T) # test
+
+#Any matching column name will be kept.
+keep=grep("Country|S1|P1|E2|Total",names(fragility23),fixed = F,value = T)
+#Keeps all rows, keeps only the columns listed in keep
+frag23_sub=fragility23[,keep]
+```
+
+```{r}
+#Creating a subsegment from the data
+frag23_sub <- fragility23[, c(
+  "Country",
+  "Total",
+  "S1: Demographic Pressures",
+  "P1: State Legitimacy",
+  "E2: Economic Inequality"
+)]
+```
+
+##  renaming
+
+```{r}
+#Renaming the columns
+colnames(frag23_sub) <- c(
+  "Country",
+  "Total",
+  "S1",
+  "P1",
+  "E2"
+)
+```
+
+```{r}
+colnames(frag23_sub)
+```
+
+```{r}
+frag23_sub
+```
+
+## filtering
+
+get me the top ten best countries on the 'E2' measure from 'frag23_sub'
+
+```{r}
+#Sort the top countries
+top10_best_E2 <- frag23_sub[order(frag23_sub$E2), ][1:10, ]
+```
+
+```{r}
+#See the result of this term.
+top10_best_E2
+```
+
+```{r}
+#Gives column wise descriptive statistics
+summary(object=top10_best_E2)
+```
+
+```{r}
+#Ranking countries by E2 and extracting the bottom 10. Order() returns indices that sort a vector, minus sign reverses the order,extracts only the country column information. Tail() returns the last 10 elements.
+tail(frag23_sub[order(x=-frag23_sub$E2),'Country'],10) #option2
+
+```
+
+## some computations
+
+give the statistical description of "frag23_sub"
+
+```{r}
+#Descriptive statistical overview of frag23_sub.
+summary(object = frag23_sub)
+```
+
+the value of the worst quartile in Total
+
+```{r}
+# Compute 75th percentile of Total
+total_q75 <- quantile(fragility23$Total, probs = 0.75, na.rm = TRUE)
+
+# Create indicator variable
+fragility23$worst_quartile <- fragility23$Total >= total_q75
+```
+
+```{r}
+table(fragility23$worst_quartile)
+```
+
+```{r}
+#Identify the worst quartile Threshold
+worst_quartile_countries <- fragility23$Country[
+  fragility23$Total >= total_q75
+]
+```
+
+```{r}
+#Create the list and order it byh worst country
+worst_quartile_countries <- sort(unique(worst_quartile_countries))
+#Review the element.
+worst_quartile_countries
+```
+
+show correlations between "S1","E2","P1"
+
+```{r}
+## show correlations between "S1","E2", "P1"
+cor(x=frag23_sub[,-c(1,2)]) #no 'Country', no "Total'
+```
+
+regress P1 and E2 on S1
+
+```{r}
+## regress P1 and E2 on S1
+lm(S1~P1+E2,data=frag23_sub)
+#Fits a multiple linear regression model
+model <- lm(S1 ~ P1 + E2, data = frag23_sub)
+#Provides the descriptive statistical overview of the model.
+summary(model)
+```
+
+# some plotting
+
+give me a plot for the 'P1' variable
+
+```{r}
+
+# some plotting
+## give me a plot for the 'P1' variable
+hist(x = frag23_sub$P1) #base r
+```
+
+visual correlation between S1 and E2
+
+```{r}
+## visual correlation between S1 and E2
+plot(x=frag23_sub$S1, y=frag23_sub$E2)
+```
+
+visual of the regression P1 and E2 on S1
+
+```{r}
+## the value of the worst quartile of Total
+q3_Total=quantile(x = frag23_sub$Total,
+                  probs = 0.75,
+                  na.rm = TRUE)
+## color points if country is on the worst quartile of Total
+frag23_sub$Total>=q3_Total
+#Saves the logical comparison as a new column called worstQt. "True" = country is in the worst 25% of Total scores. False= country is not
+frag23_sub$worstQt=frag23_sub$Total>=q3_Total
+#Creates a scatterplot
+plot(frag23_sub$S1, #S1(Demographic Pressures) x-axis
+     frag23_sub$E2,pch=20, #Y - axis: E2(Economic Inequality)
+     col = as.factor(frag23_sub$worstQt)) #colors points directly depending on whether a country is in the worst quartile of total fragility
+```
+
+```{r}
+# Select variables
+vars <- fragility23[, c(
+  "S1: Demographic Pressures",
+  "E2: Economic Inequality",
+  "P1: State Legitimacy"
+)]
+
+# Scatterplot matrix
+pairs(
+  vars,#because there are 3 variables, there will be 9 graphs
+  main = "Correlations between S1, E2, and P1",#adds a title to the entire scatterplot matrix
+  panel = function(x, y) {#Defines a custom plotting function for each panel
+    points(x, y)#Plots the scatter points on the current variable pair
+    abline(lm(y ~ x), col = "blue", lwd = 2)#Fits a simple linear regression linee
+  }
+)
+```
+
+```{r}
+# Correlation matrix. "cor" computes pairwise Pearson correlations by default.
+cor_matrix <- cor(vars)
+
+# P-value matrix. Creates a 3 by 3 matrix filled with NA, sets rows and column names to match with the vars variable
+p_matrix <- matrix(NA, ncol = 3, nrow = 3)
+#Assigns row and column names to the p-value matrix so they match the variable names in vars
+colnames(p_matrix) <- rownames(p_matrix) <- colnames(vars)
+#Creates loops and computes every pairwise correlation test, performs a hypothesis test, uses Pearson correlation by default
+for (i in 1:3) {#loops over all pairs of variables
+  for (j in 1:3) {#Runs a pearson correlation test for each pair
+    p_matrix[i, j] <- cor.test(vars[, i], vars[, j])$p.value #Extracts the stores of the p-value from each test in the corresponding cell of p_matrix
+  }
+}
+#effective sizes (strength and direction)
+cor_matrix
+#statistical significance
+p_matrix
+```
+
+```{r}
+# S1 and E2
+cor.test(fragility23$`S1: Demographic Pressures`,
+         fragility23$`E2: Economic Inequality`)
+
+# S1 and P1
+cor.test(fragility23$`S1: Demographic Pressures`,
+         fragility23$`P1: State Legitimacy`)
+
+# E2 and P1
+cor.test(fragility23$`E2: Economic Inequality`,
+         fragility23$`P1: State Legitimacy`)
+```
+
+```{r}
+#Regression Models:
+#lm means Linear Model, estimates the regression
+#`P1: State Legitimacy` ~ `S1: Demographic Pressures` using formula syntax, one side state legitamcy (Outcome variable), Demographic pressures (predictor)
+#State legitimacy as a function of Demographic pressures. Fragility23 data located within Data.
+model_P1 <- lm(`P1: State Legitimacy` ~ `S1: Demographic Pressures`,
+               data = fragility23)
+#Follows the same expcept it looks at Economic Inequality as a function of Demographic pressures
+model_E2 <- lm(`E2: Economic Inequality` ~ `S1: Demographic Pressures`,
+               data = fragility23)
+```
+
+```{r}
+#Statistical Summary of Model_P1
+summary(model_P1)
+#Statistical Summary of Model_E2
+summary(model_E2)
+```
+
+```{r}
+#Grabs Grammer of Graphes
+library(ggplot2)
+
+# P1 on S1, aes() defines the aesthetic mappings, goes back to our first Regression Models
+ggplot(fragility23,
+       aes(x = `S1: Demographic Pressures`,
+           y = `P1: State Legitimacy`,color=worst_quartile)) +
+#Adds a scatterplot and a regression line. lm (linear regression), se=TRUE (adds a shaded confidence interval around the line (95%))
+geom_point() +
+  geom_smooth(method = "lm", se = TRUE) +
+#Label the Plot
+labs(
+    title = "Regression of P1 on S1",#Title of the graph
+    x = "S1: Demographic Pressures",# Title of X line
+    y = "P1: State Legitimacy" #Title of Y line
+  )
+```
+
+```{r}
+# E2 on S1, Seeing the impact economic inequality has on Demographic pressures. Same Formula
+ggplot(fragility23,#Defines the aesthetic mappings
+       aes(x = `S1: Demographic Pressures`,#X axis: Demographic Pressures (S1)
+           y = `E2: Economic Inequality`,color=worst_quartile)) +#y-axis: Economic Inequality (E2)
+  geom_point() +#adds a scatterplot, plotting one point per country
+  geom_smooth(method = "lm", se = TRUE) +#Fits and overlays a linear regression line (E2 on S1)
+  labs(
+    title = "Regression of E2 on S1", #Adds a title to the plot
+    x = "S1: Demographic Pressures",# Labels the x axis
+    y = "E2: Economic Inequality" #Labels the y axis
+  )
+```
+
+```{r}
+## visual correlation between S1 and E2
+plot(x=frag23_sub$S1, y=frag23_sub$E2)
+
+## color points if country is on the worst quartile of Total
+frag23_sub$Total>=q3_Total
+#Saves the logical comparison as a new variable called worstQt
+frag23_sub$worstQt=frag23_sub$Total>=q3_Total
+
+#Creates a scatterplot
+plot(frag23_sub$S1, #x-axis: S1 (Demographic Pressures)
+     frag23_sub$E2,pch=20, #y-axis: E2 (Economic Inequality)
+     col = as.factor(frag23_sub$worstQt))# Colors points by whether the country is in the worst Total score
+
+
+# visual of the regression P1 and E2 on S1
+
+#install.packages("sjPlot")
+library(sjPlot)
+#Plots the model
+plot_models(model)
+```
+
